@@ -19,6 +19,8 @@ import {
 } from "firebase/auth";
 
 // --- CONFIG FIREBASE (depuis variables Netlify/Vite)
+console.log("CONFIG PROD :", firebaseConfig);
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -148,3 +150,4 @@ export async function getActiveSessionId(): Promise<string | null> {
     return null;
   }
 }
+
