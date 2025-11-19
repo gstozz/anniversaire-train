@@ -19,8 +19,6 @@ import {
 } from "firebase/auth";
 
 // --- CONFIG FIREBASE (depuis variables Netlify/Vite)
-console.log("CONFIG PROD :", firebaseConfig);
-
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -29,6 +27,9 @@ const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
+
+// DEBUG TEMPORAIRE : vérifier si Netlify injecte les variables (peut être retiré après test)
+console.log("CONFIG PROD:", firebaseConfig);
 
 // Init
 const app = initializeApp(firebaseConfig);
@@ -150,4 +151,3 @@ export async function getActiveSessionId(): Promise<string | null> {
     return null;
   }
 }
-
