@@ -20,12 +20,12 @@ import {
 
 // --- CONFIG FIREBASE (depuis variables Netlify/Vite)
 const firebaseConfig = {
-  apiKey: "AIzaSyBLWue6gztYQVVOdQlGVUTzk5oEvDNrj_s",
-  authDomain: "anniversaire-train.firebaseapp.com",
-  projectId: "anniversaire-train",
-  storageBucket: "anniversaire-train.appspot.com",
-  messagingSenderId: "804980963640",
-  appId: "1:804980963640:web:7debb742668ae32d6869cd"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // Init
@@ -50,19 +50,14 @@ export async function uploadZonePhoto(
   y: number,
   dataUrl: string
 ) {
-  // Convertir dataURL -> blob
   const blob = await (await fetch(dataUrl)).blob();
 
-  // Path Storage
   const storageRef = ref(storage, `games/${sessionId}/zones/${zoneId}.jpg`);
 
-  // Upload
   await uploadBytes(storageRef, blob);
 
-  // URL publique
   const url = await getDownloadURL(storageRef);
 
-  // Enregistrement Firestore
   await setDoc(
     doc(db, "games", sessionId, "photos", String(zoneId)),
     {
@@ -115,14 +110,12 @@ export async function uploadExtraPhoto(
 
 /* -------------------------------------------------------------
    ABONNEMENT TEMPS RÉEL
-   Pour le viewer : reçoit les photos synchronisées
 -------------------------------------------------------------- */
 export function subscribePhotos(
   sessionId: string,
   onZones: (photos: any[]) => void,
   onExtras: (extras: any[]) => void
 ) {
-  // Zones
   const unsub1 = onSnapshot(
     collection(db, "games", sessionId, "photos"),
     (snap) => {
@@ -130,7 +123,6 @@ export function subscribePhotos(
     }
   );
 
-  // Photos extra
   const unsub2 = onSnapshot(
     collection(db, "games", sessionId, "extraPhotos"),
     (snap) => {
@@ -146,7 +138,6 @@ export function subscribePhotos(
 
 /* -------------------------------------------------------------
    RÉCUPÉRER LA SESSION ACTIVE
-   Utilisé par /player pour rejoindre automatiquement la partie
 -------------------------------------------------------------- */
 export async function getActiveSessionId(): Promise<string | null> {
   try {
