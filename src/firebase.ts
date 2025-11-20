@@ -5,7 +5,9 @@ import {
   doc,
   onSnapshot,
   setDoc,
-  getDoc
+  getDoc,
+  getDocs,
+  deleteDoc
 } from "firebase/firestore";
 import {
   getStorage,
@@ -28,23 +30,23 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// DEBUG TEMPORAIRE : vérifier si Netlify injecte les variables (peut être retiré après test)
+// DEBUG TEMPORAIRE : vérifier si Netlify injecte les variables
 console.log("CONFIG PROD:", firebaseConfig);
 
-// Init
+// Init Firebase
 const app = initializeApp(firebaseConfig);
 
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const auth = getAuth(app);
 
-// Auth anonyme automatique
+// Auth anonyme automatique (pour players)
 signInAnonymously(auth).catch((err) =>
   console.error("Erreur auth anonyme:", err)
 );
 
 /* -------------------------------------------------------------
-   UPLOAD PHOTO ZONE
+   UPLOAD PHOTO DE ZONE
 -------------------------------------------------------------- */
 export async function uploadZonePhoto(
   sessionId: string,
@@ -56,9 +58,7 @@ export async function uploadZonePhoto(
   const blob = await (await fetch(dataUrl)).blob();
 
   const storageRef = ref(storage, `games/${sessionId}/zones/${zoneId}.jpg`);
-
   await uploadBytes(storageRef, blob);
-
   const url = await getDownloadURL(storageRef);
 
   await setDoc(
@@ -68,7 +68,7 @@ export async function uploadZonePhoto(
       x,
       y,
       photoUrl: url,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     },
     { merge: true }
   );
@@ -88,12 +88,9 @@ export async function uploadExtraPhoto(
 ) {
   const blob = await (await fetch(dataUrl)).blob();
 
-  const storageRef = ref(
-    storage,
-    `games/${sessionId}/extra/${extraIndex}.jpg`
-  );
-
+  const storageRef = ref(storage, `games/${sessionId}/extra/${extraIndex}.jpg`);
   await uploadBytes(storageRef, blob);
+
   const url = await getDownloadURL(storageRef);
 
   await setDoc(
@@ -103,7 +100,7 @@ export async function uploadExtraPhoto(
       x,
       y,
       photoUrl: url,
-      timestamp: Date.now(),
+      timestamp: Date.now()
     },
     { merge: true }
   );
@@ -112,7 +109,7 @@ export async function uploadExtraPhoto(
 }
 
 /* -------------------------------------------------------------
-   ABONNEMENT TEMPS RÉEL
+   ABONNEMENT TEMPS RÉEL AUX PHOTOS
 -------------------------------------------------------------- */
 export function subscribePhotos(
   sessionId: string,
@@ -140,7 +137,7 @@ export function subscribePhotos(
 }
 
 /* -------------------------------------------------------------
-   RÉCUPÉRER LA SESSION ACTIVE
+   RÉCUPÉRER LA SESSION ACTIVE (SI NÉCESSAIRE)
 -------------------------------------------------------------- */
 export async function getActiveSessionId(): Promise<string | null> {
   try {
@@ -149,5 +146,30 @@ export async function getActiveSessionId(): Promise<string | null> {
   } catch (err) {
     console.error("Erreur getActiveSessionId:", err);
     return null;
+  }
+}
+
+/* -------------------------------------------------------------
+   RESET GAME — EFFACE UNIQUEMENT LES DOCUMENTS FIRESTORE
+   ET NE SUPPRIME PAS LES IMAGES STOCKÉES
+-------------------------------------------------------------- */
+export async function resetGame(sessionId: string) {
+  try {
+    const photosCol = collection(db, "games", sessionId, "photos");
+    const extrasCol = collection(db, "games", sessionId, "extraPhotos");
+
+    // Supprimer tous les docs d’une collection Firestore
+    const deleteCollection = async (colRef: any) => {
+      const snap = await getDocs(colRef);
+      const deletions = snap.docs.map((d) => deleteDoc(d.ref));
+      await Promise.all(deletions);
+    };
+
+    await deleteCollection(photosCol);
+    await deleteCollection(extrasCol);
+
+    console.log(`Game reset for session ${sessionId}. Photos cleared.`);
+  } catch (err) {
+    console.error("Erreur resetGame:", err);
   }
 }
