@@ -236,7 +236,7 @@ export default function App({ mode, sessionId }: AppProps) {
     };
   }, []);
 
-  /* -------------------------------------------------------------
+   /* -------------------------------------------------------------
      FIREBASE SYNC (CORRECTION FINALE)
   -------------------------------------------------------------- */
   useEffect(() => {
@@ -245,14 +245,13 @@ export default function App({ mode, sessionId }: AppProps) {
 
       // ZONE PHOTOS
       zoneData => {
-        // détecter les nouvelles photos
-        const newPhotos = zoneData.filter((p: any) => {
-          return !photos.find(x => x.id === p.zoneId);
-        });
+        // En mode viewer : agrandir systématiquement
+        // la photo la plus récente (timestamp max)
+        if (mode === "viewer" && zoneData.length > 0) {
+          const p = [...zoneData].sort(
+            (a: any, b: any) => (b.timestamp ?? 0) - (a.timestamp ?? 0)
+          )[0];
 
-        // zoom auto viewer
-        if (mode === "viewer" && newPhotos.length > 0) {
-          const p = newPhotos[0];
           setEnlargedPhotoId(p.zoneId);
 
           if (enlargeTimer.current) clearTimeout(enlargeTimer.current);
@@ -287,8 +286,9 @@ export default function App({ mode, sessionId }: AppProps) {
 
     return unsub;
 
-  // ⚠️ IMPORTANT : jamais mettre photos/extras ici
+    // ⚠️ IMPORTANT : ne jamais mettre photos/extraPhotos ici
   }, [sessionId, mode]);
+
 
   /* -------------------------------------------------------------
      COORDONNÉES
